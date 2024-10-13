@@ -2,6 +2,7 @@ import numpy as np
 import win32gui, win32ui, win32con
 from PIL import Image
 from time import sleep
+import time
 import cv2 as cv
 import os
 import random
@@ -58,89 +59,148 @@ class WindowCapture:
     def get_window_position(self):
         return self.window_x, self.window_y
 
-    def generate_image_dataset(self):
-        if not os.path.exists("images"):
-            os.mkdir("images")
-        while (True):
-            img = self.get_screenshot()
-            im = Image.fromarray(img[..., [2, 1, 0]])
-            im.save(f"./images/img_{len(os.listdir('images'))}.jpeg")
-            sleep(1)
-
-    def get_window_size(self):
-        return (self.w, self.h)
-
-
 class ImageProcessor:
     model = None
 
     def __init__(self, weights_file):
         self.model = YOLO(weights_file)
 
-    def process_image(self, img, confidence_threshold=0.55, target_class = 0):
+    def process_image(self, img, target_classes=[0, 1], confidence_threshold=0.7):
         results = self.model(img)
         detections = results[0].boxes
-        return [box for box in detections if box.conf[0] >= confidence_threshold and int(box.cls[0]) == target_class]
+        return [box for box in detections if box.conf[0] >= confidence_threshold and int(box.cls[0]) in target_classes]
 
-    def draw_identified_objects(self, img, detections):
+    def draw_identified_objects(elf, img, detections, center_point):
         for box in detections:
-            x1, y1, x2, y2 = box.xyxy[0].tolist()  # Get box coordinates
+            x1, y1, x2, y2 = map(int, box.xyxy[0].tolist())  # Get box coordinates
             class_id = int(box.cls[0])  # Get class ID
             confidence = box.conf[0]  # Get confidence
+            color = (0, 255, 0) if class_id == 0 else (255, 0, 0)
 
-            cv.rectangle(img, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 2)
-            cv.putText(img, f'Class {class_id} {confidence:.2f}', (int(x1), int(y1) - 10), cv.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+            # Calculate target center
+            target_center = ((x1 + x2) // 2, (y1 + y2) // 2)
+            distance = calculate_distance(center_point, target_center)
+
+            # Draw bounding box and additional info
+            cv.rectangle(img, (x1, y1), (x2, y2), color, 2)
+            cv.putText(img, f'Class {class_id} {confidence:.2f}', (x1, y1 - 10),
+                       cv.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
+            cv.putText(img, f'Distance: {distance:.2f}', (x1, y2 + 20),
+                       cv.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)  # Show distance
+
         cv.imshow('Detection', img)
+        cv.moveWindow('Detection',0,0)
+
+class HealthBarExtractor:
+    def __init__(self, window_capture):
+        bar_x = 48  # Adjust this
+        bar_y = 20  # Adjust this
+        bar_width = 135  # Adjust this
+        bar_height = 10  # Adjust this
+        self.wincap = window_capture
+        self.bar_x = bar_x
+        self.bar_y = bar_y
+        self.bar_width = bar_width
+        self.bar_height = bar_height
+
+    def extract_health_bar(self):
+        # Get screenshot from the game window
+        img = self.wincap.get_screenshot()
+
+        # Crop the health bar region (adjust bar_x, bar_y, bar_width, bar_height)
+        health_bar = img[self.bar_y:self.bar_y + self.bar_height, self.bar_x:self.bar_x + self.bar_width]
+
+        return health_bar
 
 def calculate_distance(point1, point2):
     return math.sqrt((point1[0] - point2[0]) ** 2 + (point1[1] - point2[1]) ** 2)
-# Run this cell to initiate detections using the trained model.
+
+
+def check_health_redness(health_bar):
+    fullhealth_value = 206140
+    depleted_value = 240054
+    health_bar = cv.cvtColor(health_bar, cv.COLOR_RGBA2BGR)
+    redness_value = np.sum(health_bar[..., 2])
+    if redness_value > depleted_value:
+        return 'low'
+    elif redness_value <= fullhealth_value:
+        return 'full'
+    return 'unknown'
 
 window_name = "Pirate King Online"
-weights_file_name = r"C:\Users\Kenny\PycharmProjects\yolo_bear\scripts\runs\detect\train17\weights\last.pt"
-
+weights_file_name = r"C:\Users\Kenny\PycharmProjects\yolo_bear\scripts\runs\detect\train\weights\best.pt"
 wincap = WindowCapture(window_name)
 improc = ImageProcessor(weights_file_name)
 
 while True:
     ss = wincap.get_screenshot()
-    detections = improc.process_image(ss)
-    # Draw bounding boxes on the image
-    # ss_with_boxes = ss.copy()  # Make a copy of the image to draw on
-    # improc.draw_identified_objects(ss_with_boxes, detections)
-    # cv.imshow("Window", ss_with_boxes)
+    health_extractor = HealthBarExtractor(wincap)
+    health_bar = health_extractor.extract_health_bar()
+    health_status = check_health_redness(health_bar)
+    if health_status == 'low':
+        # Sit down to recover
+        sleep(1)
+        pyautogui.hotkey('insert')
+        print("Low health - Sitting down")
+        # Check health condition every 30 seconds until full health
+        while health_status != 'full':
+            time.sleep(5)  # Wait for 30 seconds
+            ss = wincap.get_screenshot()
+            health_bar = health_extractor.extract_health_bar()
+            health_status = check_health_redness(health_bar)
+        pyautogui.hotkey('insert')
+        print("Full health - Standing up")
+        sleep(1)
+
+    # Object detection and mob attack
+    detections = improc.process_image(ss, target_classes=[0, 1])
+    # Update bounding boxes and distances in a fresh frame
+    ss = wincap.get_screenshot() #new position
+    ss_with_boxes = ss.copy()
+    window_pos = wincap.get_window_position()
+    center_x = window_pos[0] + wincap.w // 2
+    center_y = window_pos[1] + wincap.h // 2
+    center_point = (center_x, center_y)
+    improc.draw_identified_objects(ss_with_boxes, detections, center_point)  # Pass center point
+    cv.circle(ss_with_boxes, center_point, 5, (0, 255, 255), -1)  # Yellow dot at reference center
+
     if detections:
         # Calculate the center of the window
         window_pos = wincap.get_window_position()
         center_x = window_pos[0] + wincap.w // 2
         center_y = window_pos[1] + wincap.h // 2
         center_point = (center_x, center_y)
-
         # Find the nearest bear
-        nearest_bear = None
+        nearest_target = None
         min_distance = float('inf')
 
         for detection in detections:
             x1, y1, x2, y2 = detection.xyxy[0].tolist()
-            bear_center = ((x1 + x2) / 2, (y1 + y2) / 2)
-            distance = calculate_distance(center_point, bear_center)
+            target_center = ((x1 + x2) / 2, (y1 + y2) / 2)
+            distance = calculate_distance(center_point, target_center)
+            cv.circle(ss_with_boxes, (int(target_center[0]), int(target_center[1])), 5, (0, 0, 255),
+                      -1)  # Red dot at target center
+            cv.putText(ss_with_boxes, f'Distance: {int(distance)}', (int(target_center[0]), int(target_center[1]) - 10),
+                       cv.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)  # White text for distance
 
             if distance < min_distance:
                 min_distance = distance
-                nearest_bear = bear_center
+                nearest_target = target_center
 
-        if nearest_bear:
+        if nearest_target:
             # Click on the nearest bear
-            click_x = int(nearest_bear[0]) + window_pos[0]
-            click_y = int(nearest_bear[1]) + window_pos[1]
+            click_x = int(nearest_target[0]) + window_pos[0]
+            click_y = int(nearest_target[1]) + window_pos[1]
             pyautogui.mouseDown(click_x, click_y)
             sleep(0.05)  # Hold for 50 milliseconds
             pyautogui.mouseUp()
-            print(f'Clicked on nearest bear at: ({click_x}, {click_y})')
-            sleep(random.uniform(3, 5))
-            sleep(2)
+            print(f'Clicked on target at: ({click_x}, {click_y})')
+            sleep(9)
             pyautogui.hotkey('ctrl', 'a')
             print("pressed ctrl + a")# Optional: Wait for half a second after pressing Ctrl + A
+
+    health_bar = health_extractor.extract_health_bar()
+    check_health_redness(health_bar)
 
     if cv.waitKey(1) == ord('q'):
         cv.destroyAllWindows()
