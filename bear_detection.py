@@ -134,6 +134,13 @@ improc = ImageProcessor(weights_file_name)
 
 while True:
     ss = wincap.get_screenshot()
+    detections = improc.process_image(ss, target_classes=[0, 1])
+    ss_with_boxes = ss.copy()
+    center_x = wincap.w // 2  # Use the window dimensions for center
+    center_y = wincap.h // 2
+    center_point = (center_x, center_y)
+    # Draw the reference center point (yellow dot)
+    cv.circle(ss_with_boxes, center_point, 5, (0, 255, 255), -1)
     health_extractor = HealthBarExtractor(wincap)
     health_bar = health_extractor.extract_health_bar()
     health_status = check_health_redness(health_bar)
@@ -152,52 +159,56 @@ while True:
         print("Full health - Standing up")
         sleep(1)
 
-    # Object detection and mob attack
-    detections = improc.process_image(ss, target_classes=[0, 1])
-    # Update bounding boxes and distances in a fresh frame
-    ss = wincap.get_screenshot() #new position
-    ss_with_boxes = ss.copy()
-    window_pos = wincap.get_window_position()
-    center_x = window_pos[0] + wincap.w // 2
-    center_y = window_pos[1] + wincap.h // 2
-    center_point = (center_x, center_y)
-    improc.draw_identified_objects(ss_with_boxes, detections, center_point)  # Pass center point
-    cv.circle(ss_with_boxes, center_point, 5, (0, 255, 255), -1)  # Yellow dot at reference center
-
     if detections:
-        # Calculate the center of the window
-        window_pos = wincap.get_window_position()
-        center_x = window_pos[0] + wincap.w // 2
-        center_y = window_pos[1] + wincap.h // 2
-        center_point = (center_x, center_y)
         # Find the nearest bear
         nearest_target = None
         min_distance = float('inf')
 
         for detection in detections:
-            x1, y1, x2, y2 = detection.xyxy[0].tolist()
+            x1, y1, x2, y2 = map(int, detection.xyxy[0].tolist())
+            class_id = int(detection.cls[0])  # Get class ID
+            confidence = detection.conf[0]  # Get confidence
+
+            # Calculate target center for distance calculation
             target_center = ((x1 + x2) / 2, (y1 + y2) / 2)
-            distance = calculate_distance(center_point, target_center)
-            cv.circle(ss_with_boxes, (int(target_center[0]), int(target_center[1])), 5, (0, 0, 255),
-                      -1)  # Red dot at target center
-            cv.putText(ss_with_boxes, f'Distance: {int(distance)}', (int(target_center[0]), int(target_center[1]) - 10),
-                       cv.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)  # White text for distance
+            distance = calculate_distance(center_point, target_center)  # Calculate distance from reference point
+
+            # Draw bounding box
+            color = (0, 255, 0) if class_id == 0 else (255, 0, 0)  # Green for class 0, red for others
+            cv.rectangle(ss_with_boxes, (x1, y1), (x2, y2), color, 2)
+
+            # Draw class label and confidence
+            label = f"Class {class_id} {confidence:.2f}"
+            cv.putText(ss_with_boxes, label, (x1, y1 - 10), cv.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
+
+            # Draw the distance text below the bounding box
+            cv.putText(ss_with_boxes, f'Distance: {int(distance)}', (x1, y2 + 20), cv.FONT_HERSHEY_SIMPLEX, 0.5,
+                       (255, 255, 255), 2)
 
             if distance < min_distance:
-                min_distance = distance
-                nearest_target = target_center
+                    min_distance = distance
+                    nearest_target = target_center
 
         if nearest_target:
-            # Click on the nearest bear
-            click_x = int(nearest_target[0]) + window_pos[0]
-            click_y = int(nearest_target[1]) + window_pos[1]
-            pyautogui.mouseDown(click_x, click_y)
-            sleep(0.05)  # Hold for 50 milliseconds
+            click_x, click_y = nearest_target
+            # Convert target position relative to the game window
+            window_pos = wincap.get_window_position()
+            screen_click_x = int(click_x + window_pos[0])  # Adjust x based on window position
+            screen_click_y = int(click_y + window_pos[1])  # Adjust y based on window position
+
+            # Simulate mouse click on the nearest target
+            pyautogui.mouseDown(screen_click_x, screen_click_y)
+            time.sleep(0.05)  # Hold for 50 milliseconds
             pyautogui.mouseUp()
-            print(f'Clicked on target at: ({click_x}, {click_y})')
-            sleep(9)
+            print(f'Clicked on target at: ({screen_click_x}, {screen_click_y})')
+
+            # Simulate 'ctrl + a' after a short delay
+            time.sleep(15)
             pyautogui.hotkey('ctrl', 'a')
-            print("pressed ctrl + a")# Optional: Wait for half a second after pressing Ctrl + A
+            print("Pressed 'ctrl + a'")
+    # Show the detection window
+    cv.imshow('Detection', ss_with_boxes)
+    cv.moveWindow('Detection', 0, 0)
 
     health_bar = health_extractor.extract_health_bar()
     check_health_redness(health_bar)
