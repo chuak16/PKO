@@ -57,7 +57,7 @@ class ImageProcessor:
     def __init__(self, weights_file):
         self.model = YOLO(weights_file)
 
-    def process_image(self, img, target_classes=[0, 1], confidence_threshold=0.1):
+    def process_image(self, img, target_classes=[0, 1], confidence_threshold=0.5):
         results = self.model(img)
         detections = results[0].boxes
         return [box for box in detections if box.conf[0] >= confidence_threshold and int(box.cls[0]) in target_classes]
@@ -216,7 +216,6 @@ def click_on_nearest_target(wincap, detections, center_point):
         click_x, click_y = nearest_target
         screen_click_x = int(click_x + wincap.get_window_position()[0])
         screen_click_y = int(click_y + wincap.get_window_position()[1])
-
         pyautogui.mouseDown(screen_click_x, screen_click_y)
         sleep(0.1)
         pyautogui.mouseUp()
