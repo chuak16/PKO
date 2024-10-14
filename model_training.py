@@ -24,7 +24,7 @@ def checking_correct_dataset():
     # Load dataset from dataset.yaml
     data = 'C:/Users/Kenny/PycharmProjects/yolo_bear/scripts/dataset.yaml'
 
-    # Use the train mode and pass the dataset to the model
+    # Use the train2 mode and pass the dataset to the model
     results = model.train(data=data, epochs=50, imgsz=1056)
 
 

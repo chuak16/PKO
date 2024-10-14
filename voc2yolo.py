@@ -1,6 +1,6 @@
 # from pylabel import importer
 #
-# dataset = importer.ImportVOC(path=r"C:\Users\Kenny\PycharmProjects\yolo_bear\train\label_voc")
+# dataset = importer.ImportVOC(path=r"C:\Users\Kenny\PycharmProjects\yolo_bear\train2\label_voc")
 # dataset.export.ExportToYoloV5()
 
 import os

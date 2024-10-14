@@ -1,5 +1,5 @@
 task: detect
-mode: train
+mode: train2
 model: C:\Users\Kenny\PycharmProjects\yolo_bear\scripts\runs\detect\train17\weights\last.pt
 data: C:\Users\Kenny\PycharmProjects\yolo_bear\scripts\dataset_snow.yaml
 epochs: 50
@@ -13,7 +13,7 @@ cache: false
 device: null
 workers: 8
 project: null
-name: train
+name: train2
 exist_ok: false
 pretrained: true
 optimizer: auto

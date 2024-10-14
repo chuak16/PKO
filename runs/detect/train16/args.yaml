@@ -1,5 +1,5 @@
 task: detect
-mode: train
+mode: train2
 model: yolov8n.pt
 data: C:/Users/Kenny/PycharmProjects/yolo_bear/scripts/dataset.yaml
 epochs: 50

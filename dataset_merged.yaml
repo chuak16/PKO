@@ -1,0 +1,4 @@
+names: ["bear","snow_snail"]
+nc: 2
+train: C:\Users\Kenny\PycharmProjects\yolo_bear\data_merged\train\images
+val: C:\Users\Kenny\PycharmProjects\yolo_bear\data_merged\val\images
