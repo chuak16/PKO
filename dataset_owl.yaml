@@ -1,0 +1,4 @@
+names: ["mob"]
+nc: 1
+train: C:\Users\Kenny\PycharmProjects\yolo_bear\data_owl\train\images
+val: C:\Users\Kenny\PycharmProjects\yolo_bear\data_owl\val\images

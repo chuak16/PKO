@@ -79,8 +79,8 @@ class ImageProcessor:
             cv.putText(img, f'Distance: {distance:.2f}', (x1, y2 + 20), cv.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255),
                        2)
 
-        # cv.imshow('Detection', img)
-        # cv.moveWindow('Detection', 0, 0)
+        cv.imshow('Detection', img)
+        cv.moveWindow('Detection', 0, 0)
 
 
 # HealthBarExtractor class for extracting and checking health bar status
@@ -89,7 +89,7 @@ class HealthBarExtractor:
         #230054 = 50% 234454 = 55% 225494 = 70% 243974 = 40% 251254 = 30%
         self.wincap = window_capture
         self.bar_x, self.bar_y, self.bar_width, self.bar_height = 48, 20, 135, 10
-        self.fullhealth_value, self.depleted_value = 206140, 234454
+        self.fullhealth_value, self.depleted_value = 206140, 225494
 
     def extract_health_bar(self):
         img = self.wincap.get_screenshot()
@@ -113,7 +113,7 @@ def calculate_distance(point1, point2):
     return math.sqrt((point1[0] - point2[0]) ** 2 + (point1[1] - point2[1]) ** 2)
 
 def emoji_making():
-    number = random.randint(1, 100)
+    number = random.randint(1, 50)
     if number == 1:
         pyautogui.hotkey('ctrl','1')
     elif number == 2:
@@ -125,7 +125,7 @@ def emoji_making():
 # Main loop
 def main():
     window_name = "Pirate King Online"
-    weights_file_name = r"C:\Users\Kenny\PycharmProjects\yolo_bear\scripts\runs\detect\train3\weights\last.pt"
+    weights_file_name = r"C:\Users\Kenny\PycharmProjects\yolo_bear\scripts\runs\detect\train4\weights\best.pt"
     wincap = WindowCapture(window_name)
     improc = ImageProcessor(weights_file_name)
     health_extractor = HealthBarExtractor(wincap)
@@ -175,7 +175,7 @@ def sit_and_recover(health_extractor, wincap):
         low_health_count += 1
         print(f"low health count: {low_health_count}")
 
-        if low_health_count >= 6:
+        if low_health_count >= 8:
             # If health is low after 3 checks, stand up and run away
             pyautogui.hotkey('insert')  # Stand up
             print("Health still low after 3 checks - Running away")
@@ -202,7 +202,7 @@ def sit_and_recover(health_extractor, wincap):
 def click_on_nearest_target(wincap, detections, center_point):
     nearest_target = None
     min_distance = float('inf')
-    battle_time = 12
+    battle_time = 15
     for detection in detections:
         x1, y1, x2, y2 = map(int, detection.xyxy[0].tolist())
         target_center = ((x1 + x2) // 2, (y1 + y2) // 2)
@@ -217,7 +217,7 @@ def click_on_nearest_target(wincap, detections, center_point):
         screen_click_x = int(click_x + wincap.get_window_position()[0])
         screen_click_y = int(click_y + wincap.get_window_position()[1])
         pyautogui.mouseDown(screen_click_x, screen_click_y)
-        sleep(0.1)
+        sleep(0.05)
         pyautogui.mouseUp()
         print(f'Clicked on target at: ({screen_click_x}, {screen_click_y})')
         sleep(battle_time)  # Delay before pressing 'ctrl + a'
