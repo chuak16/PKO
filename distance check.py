@@ -95,7 +95,7 @@ def calculate_distance(point1, point2):
     return math.sqrt((point1[0] - point2[0]) ** 2 + (point1[1] - point2[1]) ** 2)
 
 window_name = "Pirate King Online"
-weights_file_name = r"C:\Users\Kenny\PycharmProjects\yolo_bear\scripts\runs\detect\train\weights\best.pt"
+weights_file_name = r"best.pt or last.pt file director"
 wincap = WindowCapture(window_name)
 improc = ImageProcessor(weights_file_name)
 
