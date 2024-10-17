@@ -17,7 +17,7 @@ window = next(w for w in windows if w._hWnd == 1246558)
 for i in range(201, 240):
     bbox = window.left, window.top, window.right, window.bottom
     screenshot = ImageGrab.grab(bbox)
-    screenshot.save(f'C:\\Users\\Kenny\\PycharmProjects\\yolo_bear\\data_owl\\train\\images\\screen_{i}.png')
+    screenshot.save(f'screnshot save directory')
     time.sleep(2)
     print(f"screenshot: {i}")
 print("done")
