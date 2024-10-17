@@ -6,7 +6,7 @@ def display_boundary_box():
     model = YOLO('yolov8n.pt')
 
     # Run detection on the image
-    results = model('C:/Users/Kenny/PycharmProjects/yolo_bear/data/test/images/screen_101.png')
+    results = model('val image directory')
 
     # Get image with bounding boxes
     image = results[0].plot()
@@ -22,7 +22,7 @@ def checking_correct_dataset():
     model = YOLO('yolov8n.pt')
 
     # Load dataset from dataset.yaml
-    data = 'C:/Users/Kenny/PycharmProjects/yolo_bear/scripts/dataset.yaml'
+    data = 'dataset.yaml'
 
     # Use the train2 mode and pass the dataset to the model
     results = model.train(data=data, epochs=50, imgsz=1056)
@@ -31,4 +31,4 @@ def checking_correct_dataset():
 if __name__ == "__main__":
     # Define paths and initialize model
     model = YOLO('yolov8n.pt')
-    model.train(data='C:/Users/Kenny/PycharmProjects/yolo_bear/scripts/dataset.yaml', epochs=50, imgsz=1056)
+    model.train(data='best.pt or last.pt file directory', epochs=50, imgsz=1056)
