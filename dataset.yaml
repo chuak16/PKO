@@ -1,4 +1,4 @@
 names: ["bear"]
 nc: 1
-train: C:\Users\Kenny\PycharmProjects\yolo_bear\data\train\images
-val: C:\Users\Kenny\PycharmProjects\yolo_bear\data\val\images
+train: train image directory
+val: val image directory
