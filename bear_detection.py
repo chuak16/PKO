@@ -125,7 +125,7 @@ def emoji_making():
 # Main loop
 def main():
     window_name = "Pirate King Online"
-    weights_file_name = r"C:\Users\Kenny\PycharmProjects\yolo_bear\scripts\runs\detect\train4\weights\best.pt"
+    weights_file_name = r"best.pt or last.pt file directory"
     wincap = WindowCapture(window_name)
     improc = ImageProcessor(weights_file_name)
     health_extractor = HealthBarExtractor(wincap)
