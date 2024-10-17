@@ -6,7 +6,7 @@
 import os
 
 # Folder containing the label files
-label_folder = r"C:\Users\Kenny\PycharmProjects\yolo_bear\data\train\labels_2"
+label_folder = r"label folder"
 
 # Loop through the specific file range
 for i in range(152, 200):  # from screen_152.txt to screen_199.txt
